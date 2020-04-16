@@ -44,9 +44,10 @@ def search_by_image():
                 file.save(os.path.join(filepath, filename))
 
                 if 'sub_category' in request.form:
-                    sub_category = request.form['sub_category']
-                else:
-                    sub_category = utility_function.classify_image(filepath, filename)
+                    sub_category = [ request.form['sub_category'] ]
+                else :
+                    if 'article_type' not in request.form:
+                        sub_category = utility_function.classify_image(filepath, filename)
 
             else:
                 return jsonify({'success': False, 'message': 'Invalid image'})
@@ -116,7 +117,12 @@ def search_by_image():
         # calculate similarity between inventory products and the query product
 
         filter_start_time = time.time()
-        products = embeddings[embeddings['sub_category'] == sub_category]
+
+        products = embeddings
+
+        if sub_category != '':
+            products = products[ products['sub_category'].isin(sub_category) ]
+            
 
         if 'article_type' in request.form:
             products = products[ products['article_type'] == request.form['article_type']]

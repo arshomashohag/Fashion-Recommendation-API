@@ -175,7 +175,7 @@ def loadImage(path):
 
 
 
-def get_prediction(model, name_labels, path):
+def get_prediction(model, name_labels, other_labels, path):
     # Reshape
     img =  loadImage(path)
     # img to Array
@@ -184,9 +184,21 @@ def get_prediction(model, name_labels, path):
     x   = np.expand_dims(x, axis=0)
     # Pre process Input
     x   = preprocess_input(x)
-    x   = model.predict(x).reshape(-1) 
-    result = np.where(x == np.amax(x)) 
-    return name_labels[result[0][0]]
+    x   = model.predict(x).reshape(-1)
+    threshold_flag = False
+
+    result = np.where(x == np.amax(x))
+    for prediction in x:
+        if prediction >= app.config['CLASSIFIER_THRESHOLD']:
+            threshold_flag = True
+    
+    print(x)
+    if threshold_flag:
+        return [ name_labels[result[0][0]] ]
+    else:
+        other_labels.append(name_labels[result[0][0]])
+        print(other_labels)
+        return other_labels
 
 
 
@@ -195,8 +207,8 @@ def get_prediction(model, name_labels, path):
 def classify_image(image_path, image_name):
     static_path = os.path.join(app.root_path, 'static')
     labels = ['Bags', 'Belts', 'Bottomwear','Eyewear', 'Flip Flops', 'Fragrance', 'Innerwear', 'Jewellery', 'Lips', 'Sandal','Shoes', 'Socks', 'Topwear', 'Wallets', 'Watches']
+    other_labels = ["Dress", "Loungewear and Nightwear", "Saree", "Nails", "Makeup", "Headwear", "Ties", "Accessories", "Scarves", "Cufflinks", "Apparel Set","Free Gifts", "Stoles","Skin Care", "Skin", "Eyes", "Mufflers", "Shoe Accessories", "Sports Equipment", "Gloves", "Hair" , "Bath and Body", "Water Bottle", "Perfumes", "Umbrellas", "Wristbands", "Beauty Accessories", "Sports Accessories", "Vouchers", "Home Furnishing" ]
     keras.backend.clear_session()
     model = load_model(static_path + '/models/resnet_classifier_subcat.h5')
     
-    return get_prediction(model, labels, image_path + '/' + image_name)
-
+    return get_prediction(model, labels, other_labels, image_path + '/' + image_name)

@@ -12,6 +12,7 @@ app.config['MYSQL_PASSWORD'] = 'Shohag@1234'
 app.config['MYSQL_DB'] = 'fashion'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 app.config['MODEL_OUTPUT_DIM'] = 2048
+app.config['CLASSIFIER_THRESHOLD'] = 0.8
 
 # Search by image settings
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}

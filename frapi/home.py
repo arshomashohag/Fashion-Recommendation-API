@@ -43,7 +43,7 @@ def get_home_values():
     meta_count = cur.fetchall()
 
     meta_count = meta_count[0]['cnt']
-    rand_ids = np.random.randint(1, meta_count, 18)
+    rand_ids = np.random.randint(1, meta_count, 18*6)
     rand_ids = rand_ids.tolist()
 
     query = "SELECT image_id, article_type, product_display_name FROM product_metadata WHERE id IN ("
