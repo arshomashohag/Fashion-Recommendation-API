@@ -12,11 +12,12 @@ import json
 import time
 import multiprocessing as mp
 from sklearn.metrics.pairwise import pairwise_distances
+import tensorflow as tf
 
 
 # Input Shape
 img_width, img_height, _ = 224, 224, 3 #load_image(df.iloc[0].image).shape
-
+static_path = os.path.join(app.root_path, 'static')
     
 # base_model = ResNet50(weights='imagenet', 
 #                                     include_top=False, 
@@ -29,17 +30,24 @@ img_width, img_height, _ = 224, 224, 3 #load_image(df.iloc[0].image).shape
 #                     global_max_pool
 #                 ])
 
+graph = tf.get_default_graph()
+
+sess = tf.Session(graph=graph)
+keras.backend.set_session(sess)
+
+embedding_model = load_model(static_path + '/models/model.h5')
+classifier_model = load_model(static_path + '/models/resnet_classifier_subcat.h5')
+
 
 
 
 def img_path(img, path):
-    static_path = os.path.join(app.root_path, 'static')
     if path == None:
         return static_path + "/images/"+img
     else:
         return static_path + "/query_images/" + img
 
-def get_embedding(model, img_name, path=None):
+def get_embedding(img_name, path=None):
     if os.path.exists(img_path(img_name, path)):
         img = image.load_img(img_path(img_name, path), target_size=(img_width, img_height))
         # img to Array
@@ -48,7 +56,14 @@ def get_embedding(model, img_name, path=None):
         x   = np.expand_dims(x, axis=0)
         # Pre process Input
         x   = preprocess_input(x)
-        return (model.predict(x).reshape(-1)).tolist()
+
+        global sess
+        global graph
+
+        with graph.as_default():
+            keras.backend.set_session(sess)
+            y = embedding_model.predict(x).reshape(-1).tolist()
+            return y
     else:
         return []
 
@@ -102,14 +117,15 @@ def cosine_similarity(product, query_embed, query_dot):
 
  
 
-def get_recommendation_for_query_product(image_path, filename, inventory_products):
-    static_path = os.path.join(app.root_path, 'static')
-
-    keras.backend.clear_session()
-    model = load_model(static_path + '/models/model.h5')
+def get_recommendation_for_query_product(image_path, filename, inventory_products): 
+    
     print('Starting')
     start_time1 = time.time()
-    query_embed = get_embedding(model, filename, image_path)
+    
+    keras.backend.clear_session()
+    # model = load_model(static_path + '/models/model.h5')
+
+    query_embed = get_embedding(filename, image_path)
     print(time.time() - start_time1)
     
     
@@ -175,7 +191,7 @@ def loadImage(path):
 
 
 
-def get_prediction(model, name_labels, other_labels, path):
+def get_prediction( name_labels, other_labels, path):
     # Reshape
     img =  loadImage(path)
     # img to Array
@@ -184,31 +200,36 @@ def get_prediction(model, name_labels, other_labels, path):
     x   = np.expand_dims(x, axis=0)
     # Pre process Input
     x   = preprocess_input(x)
-    x   = model.predict(x).reshape(-1)
-    threshold_flag = False
 
-    result = np.where(x == np.amax(x))
-    for prediction in x:
-        if prediction >= app.config['CLASSIFIER_THRESHOLD']:
-            threshold_flag = True
+    global sess
+    global graph
+
+    with graph.as_default():
+        keras.backend.set_session(sess)
+        x   = classifier_model.predict(x).reshape(-1)
+        threshold_flag = False
+
+        result = np.where(x == np.amax(x))
+        for prediction in x:
+            if prediction >= app.config['CLASSIFIER_THRESHOLD']:
+                threshold_flag = True
     
-    print(x)
-    if threshold_flag:
-        return [ name_labels[result[0][0]] ]
-    else:
-        other_labels.append(name_labels[result[0][0]])
-        print(other_labels)
-        return other_labels
+        print(x)
+        if threshold_flag:
+            return [ name_labels[result[0][0]] ]
+        else:
+            other_labels.append(name_labels[result[0][0]])
+            print(other_labels)
+            return other_labels
 
 
 
 
 
 def classify_image(image_path, image_name):
-    static_path = os.path.join(app.root_path, 'static')
     labels = ['Bags', 'Belts', 'Bottomwear','Eyewear', 'Flip Flops', 'Fragrance', 'Innerwear', 'Jewellery', 'Lips', 'Sandal','Shoes', 'Socks', 'Topwear', 'Wallets', 'Watches']
     other_labels = ["Dress", "Loungewear and Nightwear", "Saree", "Nails", "Makeup", "Headwear", "Ties", "Accessories", "Scarves", "Cufflinks", "Apparel Set","Free Gifts", "Stoles","Skin Care", "Skin", "Eyes", "Mufflers", "Shoe Accessories", "Sports Equipment", "Gloves", "Hair" , "Bath and Body", "Water Bottle", "Perfumes", "Umbrellas", "Wristbands", "Beauty Accessories", "Sports Accessories", "Vouchers", "Home Furnishing" ]
     keras.backend.clear_session()
-    model = load_model(static_path + '/models/resnet_classifier_subcat.h5')
+    # model = load_model(static_path + '/models/resnet_classifier_subcat.h5')
     
-    return get_prediction(model, labels, other_labels, image_path + '/' + image_name)
+    return get_prediction(labels, other_labels, image_path + '/' + image_name)

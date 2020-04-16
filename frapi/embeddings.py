@@ -29,20 +29,20 @@ def save_embeddings():
     df = df.reset_index(drop=True)
 
     # # Pre-Trained Model
-    base_model = ResNet50(weights='imagenet', 
-                        include_top=False, 
-                        input_shape = (img_width, img_height, 3))
-    base_model.trainable = False
+    # base_model = ResNet50(weights='imagenet', 
+    #                     include_top=False, 
+    #                     input_shape = (img_width, img_height, 3))
+    # base_model.trainable = False
 
-    # # Add Layer Embedding
-    model = keras.Sequential([
-        base_model,
-        GlobalMaxPooling2D()
-    ])
+    # # # Add Layer Embedding
+    # model = keras.Sequential([
+    #     base_model,
+    #     GlobalMaxPooling2D()
+    # ])
 
     start_time = time.time()
 
-    embeddings_map = [(row['id'],  json.dumps({"value": utility_function.get_embedding(model, row['image'])})  ) for ind, row in df.iterrows()]
+    embeddings_map = [(row['id'],  json.dumps({"value": utility_function.get_embedding(row['image'])})  ) for ind, row in df.iterrows()]
     embeddings_df = pd.DataFrame(embeddings_map, columns=['image_id', 'embedding'])
     # your code
     elapsed_time = time.time() - start_time
@@ -75,21 +75,21 @@ def calculate_embeddings():
                 return 'Invalid file'
             if file and utility_function.allowed_file(file.filename):
                 # # Pre-Trained Model
-                base_model = ResNet50(weights='imagenet', 
-                                    include_top=False, 
-                                    input_shape = (img_width, img_height, 3))
-                base_model.trainable = False
+                # base_model = ResNet50(weights='imagenet', 
+                #                     include_top=False, 
+                #                     input_shape = (img_width, img_height, 3))
+                # base_model.trainable = False
 
-                # # Add Layer Embedding
-                model = keras.Sequential([
-                    base_model,
-                    GlobalMaxPooling2D()
-                ])
+                # # # Add Layer Embedding
+                # model = keras.Sequential([
+                #     base_model,
+                #     GlobalMaxPooling2D()
+                # ])
                 filename = secure_filename(file.filename)
                 static_path = os.path.join(app.root_path, 'static')
                 file.save(os.path.join(static_path+'/query_images', filename))
 
-                embedding = utility_function.get_embedding(model, filename, static_path + '/query_images')
+                embedding = utility_function.get_embedding(filename, static_path + '/query_images')
                 return json.dumps(embedding)
             else:
                 return 'Invalid file type'

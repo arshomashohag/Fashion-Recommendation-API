@@ -27,16 +27,16 @@ def save_similarities():
     mysql = mysql_connection.get_mysql()
 
     # # Pre-Trained Model
-    base_model = ResNet50(weights='imagenet', 
-                        include_top=False, 
-                        input_shape = (img_width, img_height, 3))
-    base_model.trainable = False
+    # base_model = ResNet50(weights='imagenet', 
+    #                     include_top=False, 
+    #                     input_shape = (img_width, img_height, 3))
+    # base_model.trainable = False
 
-    # # Add Layer Embedding
-    model = keras.Sequential([
-        base_model,
-        GlobalMaxPooling2D()
-    ])
+    # # # Add Layer Embedding
+    # model = keras.Sequential([
+    #     base_model,
+    #     GlobalMaxPooling2D()
+    # ])
 
     start_time = time.time()
     cur = mysql.connection.cursor()
@@ -60,7 +60,7 @@ def save_similarities():
         image_ids = []
         embeddings = []
         for row in images:
-            embds = utility_function.get_embedding( model, str( row['image_id'] ) + '.jpg' )
+            embds = utility_function.get_embedding(str( row['image_id'] ) + '.jpg' )
             if len(embds) <= 0:
                 embds = [0] * app.config['MODEL_OUTPUT_DIM']
 
