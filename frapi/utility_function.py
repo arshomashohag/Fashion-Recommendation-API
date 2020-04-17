@@ -209,16 +209,37 @@ def get_prediction( name_labels, other_labels, path):
         x   = classifier_model.predict(x).reshape(-1)
         threshold_flag = False
 
-        result = np.where(x == np.amax(x))
+        # result = np.where(x == np.amax(x))
+        max_ind = 0
+        max_val = -1
+
+        second_max_ind = 0
+        second_max_val = -1
+
+        ind = 0
         for prediction in x:
+            if prediction > max_val:
+                second_max_ind = max_ind
+                second_max_val = max_val
+                max_val = prediction
+                max_ind = ind
+            else:
+                if prediction > second_max_val:
+                    second_max_val = prediction
+                    second_max_ind = ind
+
             if prediction >= app.config['CLASSIFIER_THRESHOLD']:
                 threshold_flag = True
+            ind = ind + 1
     
         print(x)
         if threshold_flag:
-            return [ name_labels[result[0][0]] ]
+            return [ name_labels[max_ind] ]
         else:
-            other_labels.append(name_labels[result[0][0]])
+            other_labels.append(name_labels[max_ind])
+
+            if second_max_val > 0.2:
+                other_labels.append(name_labels[second_max_ind])
             print(other_labels)
             return other_labels
 
